@@ -184,7 +184,8 @@ class MyWarpFrame(gym.ObservationWrapper):
     :param height:
     """
 
-    def __init__(self, env: gym.Env, width: int = 84, height: int = 84):
+    def __init__(self, env: gym.Env, width: int = 84, height: int = 84, start_x: int = 150, stop_x: int = 210,
+                 start_y: int = 60, stop_y: int = 100):
         gym.ObservationWrapper.__init__(self, env)
         self.width = width
         self.height = height
@@ -192,8 +193,13 @@ class MyWarpFrame(gym.ObservationWrapper):
         #     low=0, high=255, shape=(self.height, self.width, 1), dtype=env.observation_space.dtype
         # )
 
-        high = np.moveaxis(np.array(self.observation_space.high)[150:210, 60:100, :], -1, 0)
-        low = np.moveaxis(np.array(self.observation_space.low)[150:210, 60:100, :], -1, 0)
+        self.start_x = start_x
+        self.start_y = start_y
+        self.stop_x = stop_x
+        self.stop_y = stop_y
+
+        high = np.moveaxis(np.array(self.observation_space.high)[self.start_x:self.stop_x, self.start_y:self.stop_y, :], -1, 0)
+        low = np.moveaxis(np.array(self.observation_space.low)[self.start_x:self.stop_x, self.start_y:self.stop_y, :], -1, 0)
         self.observation_space = gym.spaces.Box(
             low=low, high=high, shape=high.shape, dtype=env.observation_space.dtype
         )
@@ -208,7 +214,7 @@ class MyWarpFrame(gym.ObservationWrapper):
         """
         # frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         frame = np.moveaxis(frame, -1, 0)
-        new_obs = frame[:, 150:210, 60:100]
+        new_obs = frame[:, self.start_x:self.stop_x, self.start_y:self.stop_y]
         # frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
         return new_obs
 
@@ -241,6 +247,10 @@ class MyAtariWrapper(gym.Wrapper):
             frame_skip: int = 4,
             screen_width: int = 160,
             screen_height: int = 210,
+            start_x: int = 150,
+            stop_x: int = 210,
+            start_y: int = 60,
+            stop_y: int = 100,
             terminal_on_life_loss: bool = True,
             clip_reward: bool = True,
     ):
@@ -250,7 +260,8 @@ class MyAtariWrapper(gym.Wrapper):
             env = MyEpisodicLifeEnv(env)
         if "FIRE" in env.unwrapped.get_action_meanings():
             env = MyFireResetEnv(env)
-        env = MyWarpFrame(env, width=screen_width, height=screen_height)
+        env = MyWarpFrame(env, width=screen_width, height=screen_height, start_x=start_x, stop_x=stop_x,
+                          start_y=start_y, stop_y=stop_y)
         if clip_reward:
             env = MyClipRewardEnv(env)
 
